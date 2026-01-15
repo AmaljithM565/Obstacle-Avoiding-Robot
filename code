@@ -1,0 +1,90 @@
+#include <Arduino.h>
+
+//Motor Pins
+#define IN1 14
+#define IN2 27
+#define IN3 26
+#define IN4 25
+#define ENA 33
+#define ENB 32
+
+//Ultrasonic
+#define TRIG 4
+#define ECHO 5
+#define FORWARD_SPEED 50     
+#define TURN_SPEED    25    
+#define OBSTACLE_DISTANCE 20   
+
+const int CH_A = 0;
+const int CH_B = 1;
+const int PWM_FREQ = 20000;
+const int PWM_RES  = 8;
+
+void moveForward();
+void turnRight();
+void stopCar();
+void setSpeed(int left, int right);
+float getDistance();
+
+void setup() {
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+  ledcSetup(CH_A, PWM_FREQ, PWM_RES);
+  ledcSetup(CH_B, PWM_FREQ, PWM_RES);
+  ledcAttachPin(ENA, CH_A);
+  ledcAttachPin(ENB, CH_B);
+  stopCar();
+}
+void loop(){
+  float distance=getDistance();
+  if(distance > 0 && distance < OBSTACLE_DISTANCE){
+    stopCar();
+    delay(150);
+    turnRight();
+    delay(250);    
+    stopCar();
+    delay(100);
+  } 
+  else {
+    moveForward();
+  }
+}
+void moveForward(){
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  setSpeed(FORWARD_SPEED, FORWARD_SPEED);
+}
+void turnRight(){
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  setSpeed(TURN_SPEED, TURN_SPEED);
+}
+void stopCar(){
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  setSpeed(0, 0);
+}
+void setSpeed(int left, int right){
+  ledcWrite(CH_A, left);
+  ledcWrite(CH_B, right);
+}
+float getDistance(){
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+  long duration = pulseIn(ECHO, HIGH,30000);
+  if (duration == 0) return -1;
+  return (duration * 0.0343) / 2;
+}
